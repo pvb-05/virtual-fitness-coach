@@ -115,3 +115,7 @@ python app.py
 ```
 
 Mở trình duyệt web truy cập vào: **[http://localhost:5000](http://localhost:5000)**.
+
+## Liên hệ
+
+Tác giả: Bac Phan — email: phanvanbac15112005@gmail.com
