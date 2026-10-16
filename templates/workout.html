@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phòng tập Squat Trực tiếp — Virtual Fitness Coach</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/css/tailwind.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
+
+  <!-- Header Điều Hướng & Trạng Thái -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <a href="/" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition" title="Quay lại Trang chủ">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+        <div>
+          <span class="font-bold text-white text-base sm:text-lg">Phòng Tập Squat AI</span>
+          <span class="text-xs text-slate-400 hidden sm:inline ml-2">• Computer Vision & LLM Realtime</span>
+        </div>
+      </div>
+
+      <!-- Thời gian buổi tập, Nút âm thanh & Trạng thái kết nối -->
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <button id="toggleAudioBtn" class="p-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 transition" title="Bật/Tắt âm thanh hướng dẫn">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+        </button>
+
+        <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-mono font-bold text-slate-200">
+          <svg class="w-4 h-4 mr-1.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span id="sessionTimer">00:00:00</span>
+        </div>
+
+        <div id="connectionStatus" class="inline-flex items-center text-xs px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-slate-500 mr-1.5"></span>
+          <span>Chưa bắt đầu</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Khu Vực Tập Luyện Chính (Main Workout Arena) -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- Cột Trái: Màn hình Camera + Canvas Khung Xương (7 hoặc 8 Cột) -->
+    <div class="lg:col-span-8 flex flex-col space-y-4">
+      
+      <!-- Video Container 4:3 Tương Tác -->
+      <div class="relative w-full aspect-[4/3] bg-black rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl flex items-center justify-center">
+        <!-- Video Camera Thực tế -->
+        <video id="videoElement" autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1]"></video>
+
+        <!-- HTML5 Canvas Vẽ Khung Xương Phản Hồi Thời Gian Thực -->
+        <canvas id="overlayCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
+
+        <!-- Lớp phủ góc trên bên trái: Trạng thái & Góc gối -->
+        <div class="absolute top-3 left-3 flex flex-wrap gap-2 z-10">
+          <span id="stateBadge" class="px-3 py-1 rounded-full text-xs font-bold border bg-slate-800/90 text-slate-300 border-slate-700 backdrop-blur">
+            Chưa bắt đầu
+          </span>
+          <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-slate-900/80 text-emerald-400 border border-slate-700/80 backdrop-blur">
+            Gối: <span id="kneeAngleDisplay">--°</span>
+          </span>
+        </div>
+
+        <!-- Lớp phủ góc trên bên phải: FPS & Latency Backend -->
+        <div class="absolute top-3 right-3 flex items-center space-x-2 text-[11px] font-mono bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-800 text-slate-400 z-10">
+          <span id="fpsDisplay" class="text-emerald-400 font-bold">FPS: --</span>
+          <span>•</span>
+          <span id="latencyDisplay">0 ms</span>
+        </div>
+
+        <!-- Màn hình chờ khi chưa ấn Bắt đầu -->
+        <div id="startOverlayPrompt" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 space-y-4 z-20">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-white">Sẵn sàng bước vào bài tập Squat?</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm">
+              Đứng cách camera 2-2.5m, xoay người góc chéo 45° để AI theo dõi khớp gối và hông chuẩn xác nhất.
+            </p>
+          </div>
+          <button id="startWorkoutBtn" class="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 rounded-xl font-extrabold text-sm shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            </svg>
+            BẬT CAMERA & BẮT ĐẦU TẬP
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Banner Cảnh Báo & Hướng Dẫn Tư Thế (Feedback Banner) -->
+      <div id="feedbackBanner" class="p-3.5 rounded-2xl border bg-slate-800 border-slate-700 text-slate-300 flex items-center gap-3 transition">
+        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0 animate-ping"></div>
+        <span id="feedbackText" class="text-xs sm:text-sm font-medium">
+          Hệ thống sẵn sàng. Nhấn nút "Bắt đầu tập" để AI khởi động chu trình nhận diện.
+        </span>
+      </div>
+
+    </div>
+
+    <!-- Cột Phải: Bộ Đếm Rep, Đo Độ Sâu & Bảng Điều Khiển (4 hoặc 5 Cột) -->
+    <div class="lg:col-span-4 flex flex-col space-y-5">
+      
+      <!-- Card 1: Bộ Đếm Số Rep Siêu To Dễ Đọc Từ Xa -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-500/5 rounded-full pointer-events-none"></div>
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Số Lần Squat (Reps)</span>
+        
+        <div class="my-2">
+          <span id="repCountDisplay" class="text-6xl sm:text-7xl font-black tracking-tight text-white transition-transform duration-200">
+            0
+          </span>
+        </div>
+
+        <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+          State Machine Đếm Chu Trình
+        </span>
+      </div>
+
+      <!-- Card 2: Thanh Tiến Độ Đo Độ Sâu Squat (Depth Gauge) -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
+        <div class="flex justify-between items-center text-xs font-semibold">
+          <span class="text-slate-300">Tiến độ độ sâu hạ người</span>
+          <span id="depthProgressText" class="text-emerald-400 font-mono font-bold">0%</span>
+        </div>
+
+        <!-- Thanh Bar Tiến Độ -->
+        <div class="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700 p-0.5">
+          <div id="depthProgressFill" class="h-full bg-amber-500 rounded-full transition-all duration-75" style="width: 0%"></div>
+        </div>
+
+        <div class="flex justify-between text-[10px] text-slate-500 font-medium">
+          <span>0% (Đứng)</span>
+          <span>50% (Hạ gối)</span>
+          <span class="text-emerald-400 font-bold">100% (Đáy chuẩn)</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Phân Loại Tư Thế KNN Model -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Chấm điểm tư thế (KNN)</span>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold">
+            k=5 Pipeline
+          </span>
+        </div>
+
+        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+          <div class="text-xs text-slate-400">Đánh giá chuyển động:</div>
+          <div class="text-sm font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Tự động kích hoạt khi squat
+          </div>
+        </div>
+      </div>
+
+      <!-- Nút Điều Khiển Buổi Tập -->
+      <div class="flex gap-3 pt-2">
+        <button id="pauseWorkoutBtn" class="hidden flex-1 py-3 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-bold text-sm transition flex items-center justify-center border border-slate-600 shadow">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Tạm dừng
+        </button>
+
+        <button id="stopWorkoutBtn" class="hidden flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-sm transition flex items-center justify-center shadow-lg shadow-rose-600/30">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+          </svg>
+          Kết thúc
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Script Realtime WebSocket Controller -->
+  <script src="/static/js/stream.js"></script>
+  <script>
+    // Ẩn lớp phủ gợi ý khi người dùng bắt đầu buổi tập
+    document.getElementById('startWorkoutBtn').addEventListener('click', () => {
+      document.getElementById('startOverlayPrompt').classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
