@@ -2,7 +2,7 @@
 
 > **Đồ án Sinh viên Khoa Công nghệ Thông tin**  
 > **Hệ thống hỗ trợ tập luyện thể hình thông minh sử dụng Computer Vision và Mô hình Ngôn ngữ Lớn (LLM)**  
-> *Tác giả: Nhóm Sinh viên CNTT | Pair Programming with AI*
+> *Tác giả: Phan Văn Bắc with AI*
 
 ---
 
