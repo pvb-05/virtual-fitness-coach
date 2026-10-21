@@ -1,7 +1,7 @@
 """
 Virtual Fitness Coach - Main Flask Application
 Hệ thống hỗ trợ tập luyện thể hình sử dụng Computer Vision & Google Gemini API.
-Giai đoạn 7: Tích hợp Database SQLite (Lưu buổi tập, nhật ký lỗi tư thế & Dashboard Lịch sử).
+Giai đoạn 8: Hoàn thiện toàn diện hệ thống Virtual Fitness Coach.
 """
 
 import os
@@ -24,6 +24,18 @@ from core.pose_classifier import PoseClassifier
 from services.llm_agent import LLMAgent
 from services.tts_service import TTSService
 from database.db_manager import DatabaseManager
+
+# Đảm bảo console Windows hỗ trợ tiếng Việt có dấu
+if sys.stdout:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if sys.stderr:
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 load_dotenv()
 
@@ -141,7 +153,7 @@ def health_check():
 
     return jsonify({
         "status": "healthy",
-        "stage": "Giai đoạn 7: SQLite Database & Dashboard Ready",
+        "stage": "Giai đoạn 8: Hoàn thiện toàn diện hệ thống Virtual Fitness Coach",
         "python_version": sys.version.split()[0],
         "opencv_version": cv2.__version__,
         "mediapipe_version": mp.__version__,

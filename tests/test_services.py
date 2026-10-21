@@ -25,7 +25,7 @@ def test_llm_agent_offline_fallback_content():
 
 def test_llm_agent_error_duration_threshold():
     """Lỗi xuất hiện dưới 1.0 giây sẽ KHÔNG kích hoạt sinh lời khuyên."""
-    agent = LLMAgent(api_key=None, min_error_duration_sec=1.0, cooldown_sec=5.0)
+    agent = LLMAgent(api_key="offline", min_error_duration_sec=1.0, cooldown_sec=5.0)
 
     t0 = 1000.0
     # Frame 1: Lỗi vừa xuất hiện tại t0
@@ -39,7 +39,10 @@ def test_llm_agent_error_duration_threshold():
     # Frame 3: Sau 1.2s (đủ >= 1.0s) -> Kích hoạt!
     agent.process_error("ERR_DEPTH", "Hạ hông chưa đủ sâu", 0.95, rep_count=1, timestamp=t0 + 1.2)
     # Chờ luồng ngầm thực thi xong (rất nhanh vì dùng fallback)
-    time.sleep(0.1)
+    for _ in range(10):
+        if agent.latest_advice:
+            break
+        time.sleep(0.05)
 
     # Frame 4: Lấy kết quả lời khuyên
     adv4 = agent.process_error("ERR_DEPTH", "Hạ hông chưa đủ sâu", 0.95, rep_count=1, timestamp=t0 + 1.3)
@@ -49,13 +52,16 @@ def test_llm_agent_error_duration_threshold():
 
 def test_llm_agent_cooldown_mechanism():
     """Sau khi vừa sinh lời khuyên, cooldown ngăn chặn gọi liên tục."""
-    agent = LLMAgent(api_key=None, min_error_duration_sec=1.0, cooldown_sec=10.0)
+    agent = LLMAgent(api_key="offline", min_error_duration_sec=1.0, cooldown_sec=10.0)
 
     t0 = 2000.0
     # Kích hoạt lần 1
     agent.process_error("ERR_VALGUS", "Chụm gối", 0.95, rep_count=2, timestamp=t0)
     agent.process_error("ERR_VALGUS", "Chụm gối", 0.95, rep_count=2, timestamp=t0 + 1.2)
-    time.sleep(0.1)
+    for _ in range(10):
+        if agent.latest_advice:
+            break
+        time.sleep(0.05)
 
     assert agent.latest_advice is not None
     first_advice_time = agent.last_advice_timestamps.get("ERR_VALGUS", 0)

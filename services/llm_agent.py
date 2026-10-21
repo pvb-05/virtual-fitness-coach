@@ -35,19 +35,23 @@ class LLMAgent:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-2.5-flash",
+        model_name: Optional[str] = None,
         min_error_duration_sec: float = 1.0,
         cooldown_sec: float = 10.0
     ):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
-        # Kiểm tra key hợp lệ (loại trừ giá trị mẫu)
-        if not self.api_key or self.api_key in ("your_gemini_api_key_here", ""):
+        if api_key is not None:
+            self.api_key = api_key
+        else:
+            self.api_key = os.getenv("GEMINI_API_KEY", "")
+
+        # Kiểm tra key hợp lệ (loại trừ giá trị mẫu hoặc offline)
+        if not self.api_key or self.api_key in ("your_gemini_api_key_here", "", "offline"):
             self.api_key = None
             logger.info("Chưa cấu hình GEMINI_API_KEY. LLMAgent sẽ hoạt động ở chế độ Dự phòng Offline.")
         else:
-            logger.info(f"Đã phát hiện GEMINI_API_KEY. Sẵn sàng kết nối mô hình '{model_name}'.")
+            logger.info("Đã phát hiện GEMINI_API_KEY. Sẵn sàng kết nối Google Gemini API.")
 
-        self.model_name = model_name
+        self.model_name = model_name or os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
         self.min_error_duration_sec = min_error_duration_sec
         self.cooldown_sec = cooldown_sec
 
